@@ -11,6 +11,7 @@ from PIL import Image
 import imageio.v3 as iio
 import numpy as np
 import unicodedata
+import fitz
 
 
 # 🔁 Utilitaire : conversion d'image PIL ou fichier image → base64
@@ -105,13 +106,18 @@ def extract_organigramme_from_pdf_in_memory(pdf_path, api_key, instruction=None,
             "nom, prenom, civilité (M ou Mme), poste, localisation, numero_tel. "
             "'null' si non renseigné. "
             "Réponds UNIQUEMENT avec la liste JSON sans texte autour;"
-    )
+        )
 
-    images = convert_from_path(str(pdf_path), dpi=200, fmt="png")
+    doc = fitz.open(pdf_path)
     all_entries = []
-    for idx, page in enumerate(images, start=1):
-        print(f"▶️ Traitement page {idx}/{len(images)}")
-        b64 = image_to_base64(page)
+
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+        pix = page.get_pixmap(dpi=200)
+        image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+
+        print(f"▶️ Traitement page {page_num + 1}/{len(doc)}")
+        b64 = image_to_base64(image)
         entries = analyze_image_with_gpt(b64, api_key, instruction)
         all_entries.extend(entries)
 
@@ -120,6 +126,7 @@ def extract_organigramme_from_pdf_in_memory(pdf_path, api_key, instruction=None,
     else:
         print("⚠️ Aucune donnée extraite.")
         return None
+
 
 
 # 🖼️ Pour les fichiers image
