@@ -9,3 +9,5 @@ imageio[avif]
 numpy>=1.21.0
 python-dotenv>=1.1.1
 openpyxl>=3.0.10
+pymupdf
+
